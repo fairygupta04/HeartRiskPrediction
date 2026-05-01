@@ -53,3 +53,6 @@ The application will open in your default browser at `http://localhost:8501`.
 
 ## ⚠️ Disclaimer
 This application is for educational and portfolio showcase purposes only. It is not intended to replace professional medical advice, diagnosis, or treatment. Always consult a healthcare professional for medical concerns.
+
+---
+**Made with ❤️ by Shelly Kaushik**
