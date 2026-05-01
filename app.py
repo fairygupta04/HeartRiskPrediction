@@ -23,7 +23,7 @@ st.markdown("""
         min-height: 100vh;
     }
 
-    /* Hide sidebar and its toggle arrow entirely */
+    /* Hide sidebar and toggle arrow */
     [data-testid="stSidebar"]        { display: none !important; }
     [data-testid="collapsedControl"] { display: none !important; }
 
@@ -60,8 +60,7 @@ st.markdown("""
     }
     .card-title {
         font-size: 1rem; font-weight: 600; color: #a78bfa !important;
-        text-transform: uppercase; letter-spacing: 0.08em;
-        margin-bottom: 1rem;
+        text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem;
     }
 
     .section-divider {
@@ -72,30 +71,29 @@ st.markdown("""
 
     /* Result cards */
     .result-card {
-        border-radius: 16px; padding: 1.8rem;
+        border-radius: 16px; padding: 2rem;
         text-align: center; margin-top: 1rem;
         border: 1px solid rgba(255,255,255,0.12);
     }
     .result-low  { background: linear-gradient(135deg,rgba(16,185,129,0.2),rgba(5,150,105,0.1));  border-color: rgba(16,185,129,0.4); }
     .result-mod  { background: linear-gradient(135deg,rgba(245,158,11,0.2),rgba(217,119,6,0.1));   border-color: rgba(245,158,11,0.4); }
     .result-high { background: linear-gradient(135deg,rgba(239,68,68,0.2), rgba(185,28,28,0.1));   border-color: rgba(239,68,68,0.4);  }
-    .result-label { font-size: 2rem; font-weight: 700; margin: 0.4rem 0; }
-    .result-sub   { font-size: 0.9rem; color: #b0b0c8 !important; }
 
-    .metric-pill {
-        display: inline-block;
-        background: rgba(99,102,241,0.2); border: 1px solid rgba(99,102,241,0.4);
-        border-radius: 50px; padding: 0.3rem 1rem;
-        font-size: 1.6rem; font-weight: 700; color: #a5b4fc !important;
-        margin-bottom: 0.5rem;
+    .result-percent {
+        font-size: 3.5rem; font-weight: 700; margin: 0.3rem 0; line-height: 1;
     }
+    .result-label {
+        font-size: 1.1rem; font-weight: 600; margin: 0.4rem 0;
+        text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .result-sub { font-size: 0.9rem; color: #b0b0c8 !important; margin-top: 0.5rem; }
 
     /* Progress */
     .stProgress > div > div {
         background: linear-gradient(90deg,#6366f1,#a855f7,#ff4d6a) !important;
         border-radius: 10px !important;
     }
-    .stProgress > div { background: rgba(255,255,255,0.08) !important; border-radius: 10px !important; height: 10px !important; }
+    .stProgress > div { background: rgba(255,255,255,0.08) !important; border-radius: 10px !important; height: 12px !important; }
 
     /* Tabs */
     .stTabs [data-baseweb="tab-list"] {
@@ -153,7 +151,7 @@ st.markdown("""
 
 
 # ─────────────────────────────────────────────
-# LOAD MODELS
+# LOAD MODELS  (unchanged from original)
 # ─────────────────────────────────────────────
 @st.cache_resource
 def load_heart_model():
@@ -176,30 +174,46 @@ stress_model = load_stress_model()
 
 
 # ─────────────────────────────────────────────
-# HELPER FUNCTIONS  (core logic unchanged)
+# HELPER FUNCTIONS  (unchanged from original)
 # ─────────────────────────────────────────────
 def get_heart_risk_category(prob):
-    if prob < 0.3:   return "low"
-    elif prob < 0.6: return "mod"
-    else:            return "high"
+    if prob < 0.3:
+        return "Low", "green"
+    elif prob < 0.6:
+        return "Moderate", "orange"
+    else:
+        return "High", "red"
 
 def generate_heart_explanation(inputs, risk_category):
     factors = []
-    if inputs['trestbps'] > 130: factors.append("elevated blood pressure")
-    if inputs['chol'] > 200:     factors.append("high cholesterol")
-    if inputs['oldpeak'] > 1.0:  factors.append("ST depression during exercise")
-    if inputs['fbs'] == 1:       factors.append("high fasting blood sugar")
+    if inputs['trestbps'] > 130:
+        factors.append("elevated blood pressure")
+    if inputs['chol'] > 200:
+        factors.append("high cholesterol")
+    if inputs['oldpeak'] > 1.0:
+        factors.append("ST depression during exercise")
+    if inputs['fbs'] == 1:
+        factors.append("high fasting blood sugar")
     if factors:
         factor_str = ", ".join(factors[:-1]) + (" and " + factors[-1] if len(factors) > 1 else factors[0])
         return f"Your risk is **{risk_category}**. This may be influenced by {factor_str}."
-    if risk_category == "Low":
-        return "Your risk is **Low**. Your entered metrics appear to be in healthy ranges."
-    return f"Your risk is **{risk_category}** based on the combined pattern of your health metrics."
+    else:
+        if risk_category == "Low":
+            return "Your risk is **Low**. Your entered metrics appear to be in healthy ranges."
+        return f"Your risk is **{risk_category}** based on the combined pattern of your health metrics."
 
-def get_stress_color_class(stress_level):
-    return {'Low Stress': 'low', 'Moderate Stress': 'mod', 'High Stress': 'high'}.get(stress_level, 'mod')
+def get_stress_color(stress_level):
+    if stress_level == 'Low Stress':
+        return "green"
+    elif stress_level == 'Moderate Stress':
+        return "orange"
+    else:
+        return "red"
 
-RISK_EMOJI = {"low": "💚", "mod": "🟡", "high": "❤️"}
+# UI-only helpers to map original colors to CSS classes and hex values
+def color_to_css_cls(color):
+    return {"green": "low", "orange": "mod", "red": "high"}[color]
+
 RISK_COLOR = {"low": "#10b981", "mod": "#f59e0b", "high": "#ef4444"}
 
 
@@ -208,7 +222,7 @@ RISK_COLOR = {"low": "#10b981", "mod": "#f59e0b", "high": "#ef4444"}
 # ─────────────────────────────────────────────
 st.markdown("""
 <div class='hero-banner'>
-    <h1>🩺 Health Risk Prediction System</h1>
+    <h1>🩺 MediPredict </h1>
     <p>Enter your health metrics below to receive a personalised assessment of your heart disease risk and stress levels.</p>
 </div>
 """, unsafe_allow_html=True)
@@ -221,7 +235,7 @@ tab1, tab2 = st.tabs(["🫀  Heart Risk Prediction", "🧠  Stress Level Predict
 
 
 # ══════════════════════════════════════════════
-# TAB 1 — HEART RISK
+# TAB 1 — HEART RISK PREDICTION
 # ══════════════════════════════════════════════
 with tab1:
     col1, col2 = st.columns(2, gap="large")
@@ -263,38 +277,30 @@ with tab1:
                 'thalach': thalach, 'oldpeak': oldpeak,
                 'sex': sex, 'fbs': fbs, 'exang': exang
             }])
+
+            # --- original prediction logic ---
             probs        = heart_model.predict_proba(input_data)[0]
             disease_prob = probs[list(heart_model.classes_).index(1)] if 1 in heart_model.classes_ else probs[1]
-            risk_category, css_cls = get_heart_risk_category(disease_prob)
+            risk_category, color = get_heart_risk_category(disease_prob)
+
+            # map original color string to UI css class & hex
+            css_cls   = color_to_css_cls(color)
+            hex_color = RISK_COLOR[css_cls]
 
             st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
             st.markdown("#### 📊 Results")
 
-            r1, r2, r3 = st.columns([1, 1, 2])
-            with r1:
-                st.markdown(f"""
-                <div style='text-align:center;'>
-                    <div style='font-size:0.8rem;color:#9ca3af;margin-bottom:0.3rem;'>Risk Probability</div>
-                    <div class='metric-pill'>{disease_prob * 100:.1f}%</div>
-                </div>""", unsafe_allow_html=True)
-            with r2:
-                st.markdown(f"""
-                <div style='text-align:center;'>
-                    <div style='font-size:0.8rem;color:#9ca3af;margin-bottom:0.3rem;'>Risk Category</div>
-                    <div style='font-size:1.6rem;font-weight:700;color:{RISK_COLOR[css_cls]};'>{RISK_EMOJI[css_cls]} {risk_category}</div>
-                </div>""", unsafe_allow_html=True)
-            with r3:
-                st.markdown("<div style='padding-top:1.5rem;'>", unsafe_allow_html=True)
-                st.progress(float(disease_prob))
-                st.markdown("</div>", unsafe_allow_html=True)
+            # Progress bar
+            st.progress(float(disease_prob))
 
+            # Single result card showing percentage as the hero number
             st.markdown(f"""
             <div class='result-card result-{css_cls}'>
                 <div class='result-sub'>Heart Disease Risk</div>
-                <div class='result-label' style='color:{RISK_COLOR[css_cls]};'>{disease_prob * 100:.1f}%</div>
+                <div class='result-percent' style='color:{hex_color};'>{disease_prob * 100:.1f}%</div>
                 <div class='result-sub'>{generate_heart_explanation(input_data.iloc[0], risk_category)}</div>
             </div>""", unsafe_allow_html=True)
-           
+
             with st.expander("📊 View Feature Importance"):
                 classifier   = heart_model.named_steps['classifier']
                 preprocessor = heart_model.named_steps['preprocessor']
@@ -308,7 +314,7 @@ with tab1:
 
 
 # ══════════════════════════════════════════════
-# TAB 2 — STRESS LEVEL
+# TAB 2 — STRESS LEVEL PREDICTION
 # ══════════════════════════════════════════════
 with tab2:
     scol1, scol2 = st.columns(2, gap="large")
@@ -327,12 +333,12 @@ with tab2:
     with scol2:
         st.markdown("<div class='card'><div class='card-title'>💓 Vitals & Activity</div>", unsafe_allow_html=True)
         sleep_dur   = st.slider("Sleep Duration (hours)", 0.0, 12.0, 7.0, step=0.1, key="s_sleep_dur")
-        sleep_qual  = st.slider("Quality of Sleep (1–10)", 1, 10, 7, key="s_sleep_qual")
-        phys_act    = st.slider("Physical Activity Level (0–100)", 0, 100, 50, key="s_phys_act")
-        heart_rate  = st.number_input("Resting Heart Rate (bpm)", 40, 120, 70, key="s_hr")
+        sleep_qual  = st.slider("Quality of Sleep (1-10)", 1, 10, 7, key="s_sleep_qual")
+        phys_act    = st.slider("Physical Activity Level", 0, 100, 50, key="s_phys_act")
+        heart_rate  = st.number_input("Resting Heart Rate", 40, 120, 70, key="s_hr")
         daily_steps = st.number_input("Daily Steps", 0, 30000, 8000, step=500, key="s_steps")
-        sys_bp      = st.number_input("Systolic BP (e.g. 120)", 80, 200, 120, key="s_sys_bp")
-        dia_bp      = st.number_input("Diastolic BP (e.g. 80)", 40, 130, 80, key="s_dia_bp")
+        sys_bp      = st.number_input("Systolic BP (e.g., 120)", 80, 200, 120, key="s_sys_bp")
+        dia_bp      = st.number_input("Diastolic BP (e.g., 80)", 40, 130, 80, key="s_dia_bp")
         st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
@@ -343,32 +349,45 @@ with tab2:
 
     if predict_stress:
         if stress_model is None:
-            st.error("Stress model is not available. Please ensure it is in the app directory.")
+            st.error("Stress model is not available. Please ensure it's copied to the app directory.")
         else:
             input_data = pd.DataFrame([{
-                'Age': stress_age, 'Sleep Duration': sleep_dur,
-                'Quality of Sleep': sleep_qual, 'Physical Activity Level': phys_act,
-                'Heart Rate': heart_rate, 'Daily Steps': daily_steps,
-                'Systolic BP': sys_bp, 'Diastolic BP': dia_bp,
-                'Gender': stress_gender, 'Occupation': occupation, 'BMI Category': bmi_cat
+                'Age': stress_age,
+                'Sleep Duration': sleep_dur,
+                'Quality of Sleep': sleep_qual,
+                'Physical Activity Level': phys_act,
+                'Heart Rate': heart_rate,
+                'Daily Steps': daily_steps,
+                'Systolic BP': sys_bp,
+                'Diastolic BP': dia_bp,
+                'Gender': stress_gender,
+                'Occupation': occupation,
+                'BMI Category': bmi_cat
             }])
             try:
-                stress_level = stress_model.predict(input_data)[0]
-                css_cls      = get_stress_color_class(stress_level)
+                # --- original prediction logic ---
+                prediction_array = stress_model.predict(input_data)
+                stress_level     = prediction_array[0]
+                color            = get_stress_color(stress_level)
+
+                # map to UI css class & hex
+                css_cls   = color_to_css_cls(color)
+                hex_color = RISK_COLOR[css_cls]
 
                 st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
                 st.markdown("#### 📊 Results")
-                
+
                 st.markdown(f"""
                 <div class='result-card result-{css_cls}'>
-                    <div class='result-sub'>Stress Level</div>
-                    <div class='result-label' style='color:{RISK_COLOR[css_cls]};'>{stress_level}</div>
-                    <div class='result-sub'>Consistent sleep and regular physical activity can help reduce stress over time.</div>
+                    <div class='result-sub'>Stress Assessment</div>
+                    <div class='result-percent' style='color:{hex_color};'>{stress_level}</div>
+                    <div class='result-sub'>Consistent sleep and physical activity can significantly impact your overall stress.</div>
                 </div>""", unsafe_allow_html=True)
-               
-                st.info(f"Your result: **{stress_level}**. Consistent sleep and regular physical activity can significantly reduce stress over time.")
+
+                st.info(f"Your predicted stress level is **{stress_level}**. Consistent sleep and physical activity can significantly impact your overall stress.")
+
             except Exception as e:
-                st.error(f"Error during prediction: {e}")
+                st.error(f"Error predicting stress: {e}")
 
 
 # ─────────────────────────────────────────────
@@ -378,6 +397,6 @@ st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
 st.markdown("""
 <div class='footer-text'>
     ⚠️ <strong>Disclaimer:</strong> This application is for educational purposes only and is not a substitute
-    for professional medical advice, diagnosis, or treatment. Always consult a qualified healthcare professional.
+    for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician.
 </div>
 """, unsafe_allow_html=True)
